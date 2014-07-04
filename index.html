@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html ng-app="app">
+    <head>
+        <meta charset="UTF-8">
+        <title>Angular Dynamic Forms</title>
+        <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <script type="text/javascript" src="//code.angularjs.org/1.2.19/angular.js"></script>
+        <script type="text/javascript">
+            angular.module("app", [])
+                .controller("theController", ["$scope", function($scope) {
+                    $scope.data = [
+                        { id: 1, label: "Field 1", value: 10 },
+                        { id: 2, label: "Field 2", value: 20 },
+                        { id: 3, label: "Field 3", value: 30 },
+                    ]
+                    $scope.submit = function(form) {
+                        debugger;
+                    };
+                }])
+                .directive("dynamicFormName", function() {
+                    return {
+                        restrict: "A",
+                        priority: 0,
+                        require: ["form"],
+                        compile: function() {
+                            return {
+                                pre: function preLink(scope, iElement, iAttrs, ctrls) {
+                                    var name = "field" + scope.$index;
+
+                                    if (iAttrs.dnfnNameExpression) {
+                                        name = scope.$eval(iAttrs.dnfnNameExpression);
+                                    }
+
+                                    var parentForm = iElement.parent().controller("form");
+                                    if (parentForm) {
+                                        var formCtrl = ctrls[0];
+                                        delete parentForm[formCtrl.$name];
+                                        formCtrl.$name = name;
+                                        parentForm[formCtrl.$name] = formCtrl;
+                                    }
+                                }
+                            }
+                        }
+                    };
+                });
+        </script>
+    </head>
+    <body ng-controller="theController">
+        <form name="theForm" novalidate ng-submit="submit(theForm)">
+            <div ng-repeat="item in data">
+                <label for="field{{item.id}}">{{item.label}}</label>
+                <input id="field{{item.id}}" type="number" ng-form name="theInput{{item.id}}" ng-model="item.value" required dynamic-form-name dnfn-name-expression="'theInput' + item.id">
+                <ul class="validation-container" ng-show="!(theForm['theInput' + item.id].$pritine) && theForm['theInput' + item.id].$invalid">
+                    <li class="validation validation-error" ng-repeat="(name, error) in theForm['theInput' + item.id].$error">
+                        <span class="glyphicon glyphicon-exclamation-sign"></span>
+                        <span class="validation-message">{{error.description || "Invalid"}}</span>
+                    </li>
+                </ul>                
+            </div>
+            <button>Save</button>
+            <div class="well">
+                <p>Form Pristine: {{theForm.$pristine}}</p>
+                <p>Form Dirty:    {{theForm.$dirty}}</p>
+                <p>Form Valid:    {{theForm.$valid}}</p>
+                <p>Form Invalid:  {{theForm.$invalid}}</p>
+                <p>Form Error:    {{theForm.$error}}</p>
+            </div>            
+        </form>
+    </body>
+</html>
